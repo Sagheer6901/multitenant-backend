@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agency App — Automated Deploy</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --ok: #22c55e;
+      --err: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      background: linear-gradient(160deg, #0f172a 0%, #1e3a5f 100%);
+      color: var(--text);
+      padding: 24px;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    p.lead { color: var(--muted); margin-top: 0; line-height: 1.5; }
+    .steps {
+      background: rgba(56,189,248,.1);
+      border: 1px solid rgba(56,189,248,.3);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.35);
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin: 16px 0 6px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: var(--text);
+      font-size: 1rem;
+    }
+    textarea { min-height: 140px; font-family: ui-monospace, monospace; font-size: 0.78rem; }
+    .hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    button {
+      width: 100%;
+      margin-top: 24px;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0f172a;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    #result {
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 10px;
+      display: none;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    #result.ok { display: block; background: rgba(34,197,94,.15); border: 1px solid var(--ok); }
+    #result.err { display: block; background: rgba(248,113,113,.15); border: 1px solid var(--err); }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Launch your branded app</h1>
+    <p class="lead">Submit this form once. Our system builds your signed APK/AAB and publishes to <strong>your</strong> Google Play Internal Testing track automatically — no manual builds required.</p>
+
+    <div class="steps">
+      <strong>What happens after Submit:</strong><br>
+      1. Your agency is registered on the live API<br>
+      2. Cloud CI builds your branded Android app<br>
+      3. App is uploaded to your Play Console (Internal Testing)<br>
+      4. You receive Play Console access to test within ~10 minutes
+    </div>
+
+    <form class="card" id="form">
+      <label for="tenant_id">Tenant ID (slug)</label>
+      <input id="tenant_id" name="tenant_id" placeholder="agency_gamma" required pattern="[a-z][a-z0-9_]{2,31}" />
+
+      <label for="brand_name">Brand name</label>
+      <input id="brand_name" name="brand_name" placeholder="Gamma Rides" required />
+
+      <label for="primary_color">Primary brand color</label>
+      <input id="primary_color" name="primary_color" type="color" value="#2196F3" />
+      <input type="hidden" id="primary_color_hex" name="primary_color_hex" value="#2196F3" />
+
+      <label for="application_id">Android App ID (package name)</label>
+      <input id="application_id" name="application_id" placeholder="com.yourcompany.gammarides" required />
+      <div class="hint">Must match the app you created in Google Play Console.</div>
+
+      <label for="play_json_file">Play Store service account JSON (required)</label>
+      <input id="play_json_file" name="play_json_file" type="file" accept=".json,application/json" required />
+      <div class="hint">Play Console → Setup → API access → Service account → Create JSON key. Grant Release permissions.</div>
+
+      <button type="submit" id="submitBtn">Submit — Build &amp; Deploy Automatically</button>
+      <div id="result"></div>
+    </form>
+  </div>
+
+  <script>
+    const colorInput = document.getElementById('primary_color');
+    const colorHex = document.getElementById('primary_color_hex');
+    colorInput.addEventListener('input', () => {
+      colorHex.value = colorInput.value.toUpperCase();
+    });
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const result = document.getElementById('result');
+      btn.disabled = true;
+      btn.textContent = 'Building & deploying… (5–10 min)';
+      result.className = '';
+      result.style.display = 'none';
+
+      const body = new FormData();
+      body.append('tenant_id', document.getElementById('tenant_id').value.trim().toLowerCase());
+      body.append('brand_name', document.getElementById('brand_name').value.trim());
+      body.append('primary_color', colorHex.value);
+      body.append('application_id', document.getElementById('application_id').value.trim().toLowerCase());
+      const file = document.getElementById('play_json_file').files[0];
+      if (!file) {
+        result.className = 'err';
+        result.textContent = 'Play Store JSON key file is required.';
+        btn.disabled = false;
+        btn.textContent = 'Submit — Build & Deploy Automatically';
+        return;
+      }
+      body.append('play_json_file', file);
+
+      try {
+        const res = await fetch('/api/agencies/register', { method: 'POST', body });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        result.className = 'ok';
+        result.innerHTML =
+          '<strong>Automated deployment started</strong><br><br>' +
+          'Agency: <strong>' + data.name + '</strong> (<code>' + data.tenant_id + '</code>)<br>' +
+          'App ID: <code>' + data.application_id + '</code><br><br>' +
+          'Our cloud pipeline is now building and uploading to your Play Internal Testing track.<br>' +
+          'Check your Play Console in about 10 minutes — no further action needed on our side.<br><br>' +
+          (data.actions_url ? 'Pipeline status: <a href="' + data.actions_url + '" target="_blank">View cloud build</a><br>' : '') +
+          (data.note ? '<br><em>' + data.note + '</em>' : '');
+      } catch (err) {
+        result.className = 'err';
+        result.textContent = err.message || String(err);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Submit — Build & Deploy Automatically';
+      }
+    });
+  </script>
+</body>
+</html>

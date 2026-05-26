@@ -1,0 +1,17 @@
+{
+  "api_base_url": "https://multitenant-backend-ml5h.onrender.com",
+  "tenants": [
+    {
+      "id": "sandbox_test",
+      "name": "Sandbox Transit",
+      "primary_color": "#4CAF50",
+      "application_id": "com.platform.tenant.sandbox_test"
+    },
+    {
+      "id": "agency_alpha",
+      "name": "Alpha Rides",
+      "primary_color": "#FF5722",
+      "application_id": "com.platform.tenant.agency_alpha"
+    }
+  ]
+}
