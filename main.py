@@ -31,6 +31,7 @@ def root():
     return {
         "status": "ok",
         "service": "tenants-api",
+        "version": "portal-v2",
         "portal": "/portal",
         "message": "Agency owners: open /portal to register and auto-deploy to Play Store.",
     }
