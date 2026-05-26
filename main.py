@@ -22,6 +22,8 @@ def reload_tenants() -> dict:
 @app.on_event("startup")
 def on_startup() -> None:
     reload_tenants()
+    if not STATIC_DIR.joinpath("portal.html").is_file():
+        raise RuntimeError(f"Missing portal UI at {STATIC_DIR / 'portal.html'}")
 
 
 @app.get("/")
