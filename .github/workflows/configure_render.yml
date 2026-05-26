@@ -1,0 +1,27 @@
+name: Configure and Deploy Render
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "main.py"
+      - "static/**"
+      - "requirements.txt"
+      - "render.yaml"
+      - "scripts/render_deploy.py"
+
+jobs:
+  deploy-render:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.RENDER_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Render env and deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.PLATFORM_GITHUB_TOKEN }}
+          GITHUB_OWNER: Sagheer6901
+          GITHUB_MOBILE_REPO: multitenant-mobile
+        run: python scripts/render_deploy.py

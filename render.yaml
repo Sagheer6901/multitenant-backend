@@ -3,6 +3,16 @@ services:
     name: multitenant-backend
     runtime: python
     plan: free
+    repo: https://github.com/Sagheer6901/multitenant-backend
+    branch: main
+    autoDeploy: true
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /
+    healthCheckPath: /portal
+    envVars:
+      - key: GITHUB_OWNER
+        value: Sagheer6901
+      - key: GITHUB_MOBILE_REPO
+        value: multitenant-mobile
+      - key: GITHUB_TOKEN
+        sync: false
